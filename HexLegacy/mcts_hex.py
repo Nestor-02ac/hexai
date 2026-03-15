@@ -1,31 +1,32 @@
 """
 Monte-Carlo Tree Search for Hex with UCT and RAVE (AMAF).
+Pure Python reference implementation.
 
 Based on: "Monte-Carlo Hex" by Cazenave & Saffidine.
+
+This implementation uses type 2 rollouts (bridge defense only) to study how
+well the paper's results hold without higher-level domain knowledge (level-2
+edge templates, Ziggurats). A Cython version (cmcts_hex.pyx) provides ~12x
+speedup with the same algorithm and API.
 
 Key formulas from the paper:
   UCT: mu + C * sqrt(log(parent_visits) / visits)
   RAVE coef: coef = 1.0 - rc / (rc + c + rc * c * bias)
   RAVE val:  val = m * coef + (1.0 - coef) * rw / rc
 
-Implemented features:
+Implemented (core algorithm):
   - UCT tree search with configurable exploration constant
   - RAVE/AMAF heuristic with configurable bias
-  - Bridge detection during rollout simulations
+  - Type 2 rollouts: bridge defense during simulations
   - Union-Find win detection
 
-NOT implemented (documented omissions from the paper):
-  - Level-2 edge templates (section 1.1): would require pattern-matching
-    for the 4-3-2 edge template during simulations.
-  - Ziggurat detection (section 1.1 / 2.1): the paper itself notes this
-    makes sequential play slower (32% win rate with fixed time). Would
-    benefit from parallelization.
-  - Virtual connection solver integration (section 2.3): requires
-    Anshelevich's algorithm [1] for computing virtual connections and
-    mustplay regions. This is a substantial standalone system. The paper
-    reports 69.5% win rate with this addition.
+Intentionally omitted (domain-specific enhancements):
+  - Level-2 edge templates (type 3): main source of absolute % differences
+    with the paper at low sim counts. See README.md for analysis.
+  - Ziggurats (type 4): paper notes 32% win rate with fixed time.
+  - Virtual connection solver (section 2.3): requires Anshelevich's algorithm.
 
-Performance notes:
+Implementation notes:
   - Simulations fill the entire board (Hex has no draws on full boards)
   - Bridge detection only checks neighbors of the last move played
   - Uses flat cell indices instead of (r,c) tuples
