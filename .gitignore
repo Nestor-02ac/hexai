@@ -3,3 +3,4 @@ manim_hex_visualization.py
 prepare_manim_data.py
 media/
 */__pycache__/*
+*/checkpoints/*

@@ -4,7 +4,7 @@ Exploring Monte Carlo Tree Search approaches for the game of Hex, from
 classical UCT + RAVE to learned evaluation (AlphaZero). Each approach lives in
 its own directory with shared benchmarking so they can be compared head-to-head.
 
-## 1. Classical MCTS — `HexLegacy/`
+## 1. Classical MCTS — `HexClassic/`
 
 Comparative study of the algorithm from **"Monte-Carlo Hex"** (Cazenave &
 Saffidine). We implement UCT + RAVE with **type 2 rollouts** (bridge defense
@@ -135,7 +135,7 @@ Intentionally omitted to keep the study focused on the core algorithm:
 ### Usage
 
 ```bash
-cd HexLegacy/
+cd HexClassic/
 
 # build cython (needs cython package)
 python setup.py build_ext --inplace
@@ -163,7 +163,7 @@ Flags: `--cython` (fast backend), `--seed N` (reproducibility), `--workers N`
 ### Files
 
 ```
-HexLegacy/
+HexClassic/
   hex_board.py       Python board with Union-Find
   mcts_hex.py        Python MCTS (UCT + RAVE + type 2)
   chex_board.pyx/pxd Cython board
@@ -176,8 +176,82 @@ HexLegacy/
 
 ---
 
-## 2. AlphaZero — `AlphaZero/` *(coming next)*
+## 2. Gumbel AlphaZero — `HexGumbelZero/`
 
-Learned evaluation via self-play: a neural network replaces both rollouts and
-RAVE with a policy-value head, trained from scratch on Hex. Direct head-to-head
-comparison with the classical MCTS agent above.
+Neural-network-guided MCTS trained from scratch via self-play. Instead of
+rollouts and RAVE, a ResNet provides move probabilities (policy) and position
+evaluation (value) directly. We use the **Gumbel AlphaZero** variant
+("Policy improvement by planning with Gumbel", Danihelka et al. 2022), which
+replaces Dirichlet noise with Gumbel sampling and sequential halving to
+guarantee policy improvement even with very few simulations.
+
+The training loop is standard AlphaZero-style: play games against yourself using
+MCTS guided by the current network, then train the network on the improved
+policy targets that MCTS produces. What makes Gumbel AlphaZero interesting is
+that the search itself is more principled — the action selection at the root is
+provably optimal in the one-simulation limit, and sequential halving allocates
+the simulation budget efficiently across candidate moves.
+
+### How it works
+
+1. **Board encoding** — 3 binary planes: current player's stones, opponent's
+   stones, and a to-play indicator (all 1s when Black to move, all 0s for
+   White).
+
+2. **Network** — Small ResNet (5 blocks, 64 channels by default). Splits into a
+   policy head (move logits over all board cells) and a value head (tanh scalar
+   in [-1, 1]).
+
+3. **Gumbel MCTS at the root** —
+   - Sample Gumbel(0,1) noise for each legal move.
+   - Score moves by `g(a) + log π(a)` and keep the top-m candidates.
+   - Sequential halving: run simulations in phases, eliminate the bottom half of
+     candidates each phase.
+   - Final move: `argmax g(a) + log π(a) + σ(q̄(a))` where σ scales the
+     completed Q-values to be comparable with log-priors.
+
+4. **PUCT at interior nodes** — Standard AlphaZero-style selection for all nodes
+   below the root.
+
+5. **Improved policy** — The training target is `softmax(log π + σ(q̄))`, not
+   raw visit counts. Trained with KL divergence.
+
+### Usage
+
+```bash
+cd HexGumbelZero/
+
+# build cython board (optional, falls back to pure Python)
+python setup.py build_ext --inplace
+
+# quick smoke test
+python train.py --iterations 3 --games-per-iter 5
+
+# default training (7x7, 100 iterations)
+python train.py
+
+# larger board with more capacity
+python train.py --board-size 9 --channels 128 --res-blocks 8
+
+# resume from checkpoint
+python train.py --resume checkpoints/iter_0050.pt
+```
+
+Evaluation against random and classical MCTS runs automatically every 5
+iterations.
+
+### Files
+
+```
+HexGumbelZero/
+  hex_board.py       Python board (copied from HexClassic)
+  chex_board.pyx/pxd Cython board (copied from HexClassic)
+  config.py          All hyperparameters (dataclass)
+  neural_net.py      ResNet with policy + value heads
+  mcts.py            Gumbel MCTS search + agent wrapper
+  self_play.py       Game generation + replay buffer
+  trainer.py         Training loop (self-play -> train -> eval)
+  evaluate.py        Benchmarks vs random and classical MCTS
+  train.py           CLI entry point
+  setup.py           Cython build script
+```
