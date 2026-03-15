@@ -22,7 +22,8 @@ def main():
     parser.add_argument('--board-size', type=int, default=7)
     parser.add_argument('--channels', type=int, default=64)
     parser.add_argument('--res-blocks', type=int, default=5)
-    parser.add_argument('--simulations', type=int, default=50)
+    parser.add_argument('--simulations', type=int, default=0,
+                        help='MCTS sims per move (0 = auto: board_size^2)')
     parser.add_argument('--lr', type=float, default=2e-3)
     parser.add_argument('--iterations', type=int, default=100)
     parser.add_argument('--games-per-iter', type=int, default=100)

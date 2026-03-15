@@ -78,7 +78,6 @@ def generate_self_play_data(config, network, num_games, device):
     boards = [_make_board(config.board_size) for _ in range(num_games)]
     mcts_engines = [GumbelMCTS(config, network, device) for _ in range(num_games)]
     currents = [1] * num_games  # BLACK starts
-    move_nums = [0] * num_games
     trajectories = [[] for _ in range(num_games)]
     finished = [False] * num_games
     winners = [0] * num_games
@@ -214,7 +213,8 @@ def generate_self_play_data(config, network, num_games, device):
         return False
 
     def _commit_move(i):
-        """Select action, record trajectory, play move."""
+        """Select action, record trajectory, play move.
+        No temperature sampling — Gumbel noise already provides exploration."""
         legal = legal_list[i]
         if len(legal) <= 1:
             action = legal[0] if legal else 0
@@ -227,21 +227,10 @@ def generate_self_play_data(config, network, num_games, device):
             action = max(legal, key=lambda a: gumbels[i][a] + log_pis[i][a] + sigma[a])
             ip = mcts_engines[i]._improved_policy(log_pis[i], sigma)
 
-        # Temperature sampling
-        if move_nums[i] < config.temperature_drop_move and config.temperature > 0:
-            empties = boards[i].get_empty_cells()
-            probs = np.array([ip[a] for a in empties], dtype=np.float64)
-            total = probs.sum()
-            if total > 0:
-                probs = probs ** (1.0 / config.temperature)
-                probs /= probs.sum()
-                action = empties[np.random.choice(len(empties), p=probs)]
-
         state_np = encode_board(boards[i], currents[i]).numpy()
         trajectories[i].append((state_np, ip, currents[i]))
 
         boards[i].play(action, currents[i])
-        move_nums[i] += 1
 
         if boards[i].check_win(currents[i]):
             winners[i] = currents[i]
