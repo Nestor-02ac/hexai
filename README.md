@@ -176,27 +176,23 @@ HexClassic/
 
 ---
 
-## 2. Gumbel AlphaZero — `HexGumbelZero/`
+## 2. Gumbel AlphaZero — `HexGumbel/`
 
 Neural-network-guided MCTS trained from scratch via self-play. Instead of
 rollouts and RAVE, a ResNet provides move probabilities (policy) and position
-evaluation (value) directly. We use the **Gumbel AlphaZero** variant
-("Policy improvement by planning with Gumbel", Danihelka et al. 2022), which
-replaces Dirichlet noise with Gumbel sampling and sequential halving to
-guarantee policy improvement even with very few simulations.
+evaluation (value) directly. This is the project’s current **Gumbel
+AlphaZero** implementation for Hex, with batched neural-network inference
+across parallel self-play and evaluation games.
 
 The training loop is standard AlphaZero-style: play games against yourself using
 MCTS guided by the current network, then train the network on the improved
-policy targets that MCTS produces. What makes Gumbel AlphaZero interesting is
-that the search itself is more principled — the action selection at the root is
-provably optimal in the one-simulation limit, and sequential halving allocates
-the simulation budget efficiently across candidate moves.
+policy targets that MCTS produces. The root search uses Gumbel sampling plus
+sequential halving, while interior nodes use PUCT.
 
 ### How it works
 
-1. **Board encoding** — 3 binary planes: current player's stones, opponent's
-   stones, and a to-play indicator (all 1s when Black to move, all 0s for
-   White).
+1. **Board encoding** — 4 binary planes: current player's stones, opponent's
+   stones, Black-to-move, and White-to-move.
 
 2. **Network** — Small ResNet (5 blocks, 64 channels by default). Splits into a
    policy head (move logits over all board cells) and a value head (tanh scalar
@@ -207,8 +203,8 @@ the simulation budget efficiently across candidate moves.
    - Score moves by `g(a) + log π(a)` and keep the top-m candidates.
    - Sequential halving: run simulations in phases, eliminate the bottom half of
      candidates each phase.
-   - Final move: `argmax g(a) + log π(a) + σ(q̄(a))` where σ scales the
-     completed Q-values to be comparable with log-priors.
+   - Final move selection uses searched root counts, while the training target
+     remains `softmax(log π + σ(q̄))`.
 
 4. **PUCT at interior nodes** — Standard AlphaZero-style selection for all nodes
    below the root.
@@ -219,7 +215,7 @@ the simulation budget efficiently across candidate moves.
 ### Usage
 
 ```bash
-cd HexGumbelZero/
+cd HexGumbel/
 
 # build cython board (optional, falls back to pure Python)
 python setup.py build_ext --inplace
@@ -243,7 +239,7 @@ iterations.
 ### Files
 
 ```
-HexGumbelZero/
+HexGumbel/
   hex_board.py       Python board (copied from HexClassic)
   chex_board.pyx/pxd Cython board (copied from HexClassic)
   config.py          All hyperparameters (dataclass)

@@ -34,7 +34,7 @@ def seed_rng(int seed):
     srand(seed)
 
 
-# ====== Fisher-Yates shuffle using libc rand ======
+# Fisher-Yates shuffle using libc rand
 
 cdef inline void shuffle_array(int* arr, int n) noexcept nogil:
     cdef int i, j, tmp
@@ -45,7 +45,7 @@ cdef inline void shuffle_array(int* arr, int n) noexcept nogil:
         arr[j] = tmp
 
 
-# ====== MCTS Node struct ======
+# MCTS node struct
 # Children stored per-node in a dynamically allocated array.
 
 cdef struct MCTSNodeData:
@@ -135,7 +135,7 @@ cdef class CMCTSHex:
         if n_empty == 1:
             return empty_py[0]
 
-        # --- Node pool ---
+        # Node pool
         cdef int pool_size = 0
         cdef int pool_capacity = num_sims + 2
         cdef MCTSNodeData* nodes = <MCTSNodeData*>malloc(pool_capacity * sizeof(MCTSNodeData))
@@ -199,7 +199,7 @@ cdef class CMCTSHex:
             memset(black_amaf, 0, n * sizeof(int))
             memset(white_amaf, 0, n * sizeof(int))
 
-            # === SELECTION ===
+            # Selection
             while nodes[node_idx].untried_count == 0 and nodes[node_idx].child_count > 0:
                 best_val = -1e18
                 best_child_idx = -1
@@ -259,7 +259,7 @@ cdef class CMCTSHex:
                     white_amaf[nodes[node_idx].move] = 1
                 cur = 3 - cur
 
-            # === EXPANSION ===
+            # Expansion
             if nodes[node_idx].untried_count > 0:
                 parent_idx = node_idx
 
@@ -315,7 +315,7 @@ cdef class CMCTSHex:
                     node_idx = child_idx
                 cur = 3 - cur
 
-            # === SIMULATION (rollout) ===
+            # Simulation
             ne = 0
             for i in range(n):
                 if sim_board.board[i] == 0:
@@ -395,7 +395,7 @@ cdef class CMCTSHex:
             else:
                 winner = 2
 
-            # === BACKPROPAGATION ===
+            # Backpropagation
             idx = node_idx
             while idx >= 0:
                 nodes[idx].visits += 1

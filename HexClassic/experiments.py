@@ -168,12 +168,11 @@ def run_experiment(size, agent1_params, agent2_params, num_games=200, desc="",
     if num_workers is None:
         num_workers = NUM_WORKERS
 
-    print(f"\n{'='*60}")
+    print()
     print(f"  {desc}")
     print(f"  Agent1: {agent1_params}")
     print(f"  Agent2: {agent2_params}")
     print(f"  Games: {num_games}, Board: {size}x{size}, Workers: {num_workers}")
-    print(f"{'='*60}")
 
     start = time.time()
 
@@ -279,15 +278,14 @@ def small_experiment(seed=None):
     Quick way to verify that all algorithmic trends hold before
     committing to the full 11x11 runs.
     """
-    print("\n" + "=" * 60)
+    print()
     print("  Small-scale trend verification (5x5, 500 sims, 30 games)")
-    print("=" * 60)
 
     size = 5
     ng = 30
     all_data = {"board_size": size, "num_games_per_exp": ng, "experiments": {}}
 
-    # --- Mini Table 1: More simulations = stronger ---
+    # Mini Table 1: More simulations = stronger
     print("\n  Mini Table 1: simulation count")
     print("  (fewer sims < 50%, more sims > 50%)")
     ref = {
@@ -309,7 +307,7 @@ def small_experiment(seed=None):
         "results": {str(k): v for k, v in r1.items()},
     }
 
-    # --- Mini Table 2: UCT constant ---
+    # Mini Table 2: UCT constant
     print("\n  Mini Table 2: UCT constant with RAVE")
     print("  (C=0 best with RAVE, higher C = worse)")
     ref2 = {
@@ -330,7 +328,7 @@ def small_experiment(seed=None):
         "results": {str(k): v for k, v in r2.items()},
     }
 
-    # --- Mini Table 3: Random vs Bridges ---
+    # Mini Table 3: Random vs Bridges
     print("\n  Mini Table 3: random vs bridge rollouts")
     print("  (random should lose, bridges are stronger)")
     ref3 = {
@@ -346,7 +344,7 @@ def small_experiment(seed=None):
         "results": {"random_vs_bridges": r3},
     }
 
-    # --- RAVE vs no-RAVE ---
+    # RAVE vs no-RAVE
     print("\n  RAVE vs pure UCT")
     print("  (RAVE should improve play significantly, >55%)")
     rave_p = {
@@ -399,7 +397,6 @@ def table1_simulations(size=11, num_games=200, seed=None):
 
     print(f"\n  Summary:")
     print(f"  {'Sims':>8} | {'Ours':>7} | {'Paper':>7}")
-    print(f"  {'-'*28}")
     for s in sorted(results):
         print(f"  {s:>8} | {results[s]['win_pct']:>6.1f}% | {paper[s]:>6.1f}%")
 
@@ -442,7 +439,6 @@ def table2_uct_constant(size=11, num_games=200, seed=None):
 
     print(f"\n  Summary:")
     print(f"  {'C':>6} | {'Ours':>7} | {'Paper':>7}")
-    print(f"  {'-'*25}")
     for c in [0.0, 0.1, 0.2, 0.4, 0.5, 0.6, 0.7]:
         print(f"  {c:>6.1f} | {results[c]['win_pct']:>6.1f}% | {paper[c]:>6.1f}%")
 
@@ -484,7 +480,6 @@ def table3_templates(size=11, num_games=200, seed=None):
 
     print(f"\n  Summary:")
     print(f"  {'Type':>10} | {'Ours (vs type2)':>15} | {'Paper (vs type3)':>16}")
-    print(f"  {'-'*48}")
     print(f"  {'random':>10} | {r1['win_pct']:>14.1f}% | {'22.0%':>16}")
     print(f"  Bridges alone already provide strong rollout guidance.")
 
@@ -529,7 +524,6 @@ def table4_rave_bias(size=11, num_games=200, seed=None):
 
     print(f"\n  Summary:")
     print(f"  {'Bias':>10} | {'Ours':>7} | {'Paper':>7}")
-    print(f"  {'-'*30}")
     for b in [0.0005, 0.00025, 0.000125]:
         print(f"  {b:>10.6f} | {results[b]['win_pct']:>6.1f}% | {paper[b]:>6.1f}%")
 

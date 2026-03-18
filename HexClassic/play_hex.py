@@ -86,12 +86,11 @@ def play_interactive(size=7, num_sims=3000, human_color='black'):
     human_player = Player.BLACK if human_color == 'black' else Player.WHITE
     ai_player = human_player.opponent
 
-    print(f"\n{'='*50}")
+    print()
     print(f"  HEX GAME: {size}x{size}")
     print(f"  You: {'BLACK (TOP-BOTTOM)' if human_player == Player.BLACK else 'WHITE (LEFT-RIGHT)'}")
     print(f"  AI: {num_sims} MCTS simulations")
     print(f"  Enter 'row col' (e.g. '5 3'), 'q' to quit")
-    print(f"{'='*50}")
 
     current = Player.BLACK
     move_num = 0

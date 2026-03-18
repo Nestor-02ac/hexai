@@ -40,9 +40,8 @@ class Trainer:
 
     def train(self, start_iteration=0):
         for iteration in range(start_iteration, self.config.num_iterations):
-            print(f"\n{'='*50}")
+            print()
             print(f"  Iteration {iteration + 1}/{self.config.num_iterations}")
-            print(f"{'='*50}")
 
             # Self-play
             t0 = time.time()

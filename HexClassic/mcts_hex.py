@@ -117,7 +117,7 @@ class MCTSHex:
             tree_black_moves = set()
             tree_white_moves = set()
 
-            # === SELECTION ===
+            # Selection
             while not node.untried_moves and node.children:
                 # Inline select_child for speed
                 best_val = -1.0
@@ -177,7 +177,7 @@ class MCTSHex:
                     tree_white_moves.add(node.move)
                 cur = 3 - cur
 
-            # === EXPANSION ===
+            # Expansion
             if node.untried_moves:
                 idx = random.randrange(len(node.untried_moves))
                 move = node.untried_moves[idx]
@@ -203,7 +203,7 @@ class MCTSHex:
                 node = child
                 cur = 3 - cur
 
-            # === SIMULATION (rollout) ===
+            # Simulation
             # Get empty cells, shuffle, fill alternately
             empties = [i for i in range(sim_board.n) if sim_board.board[i] == 0]
             random.shuffle(empties)
@@ -271,7 +271,7 @@ class MCTSHex:
             else:
                 winner = 2
 
-            # === BACKPROPAGATION ===
+            # Backpropagation
             # AMAF: update RAVE stats using ALL moves from the full
             # simulation path (tree selection + expansion + rollout),
             # as per "All Moves As First" (Bruegmann 1993, Gelly 2007).
