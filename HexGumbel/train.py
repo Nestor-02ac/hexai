@@ -5,12 +5,13 @@ Usage:
   python train.py                                # defaults (7x7, 100 iters)
   python train.py --board-size 9 --channels 128  # larger board
     python train.py --simulations 16 --batch-size 1024 --train-steps 220
-  python train.py --resume checkpoints/iter_0050.pt
+  python train.py --resume checkpoints/<run_id>/iter_0050.pt
   python train.py --iterations 5 --games-per-iter 10  # quick smoke test
 """
 
 import argparse
 import random
+import sys
 import numpy as np
 import torch
 
@@ -100,6 +101,11 @@ def main():
     print(f"  Device: {config.device}")
 
     trainer = Trainer(config)
+    trainer.configure_run(
+        cli_args=vars(args),
+        argv=sys.argv,
+        resume_path=args.resume,
+    )
 
     start_iter = 0
     if args.resume:

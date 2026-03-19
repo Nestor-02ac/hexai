@@ -4,6 +4,8 @@ Exploring Monte Carlo Tree Search approaches for the game of Hex, from
 classical UCT + RAVE to learned evaluation (AlphaZero). Each approach lives in
 its own directory with shared benchmarking so they can be compared head-to-head.
 
+![HexClassic vs HexGumbel dashboard](hex_dashboard_5x5.gif)
+
 ## 1. Classical MCTS — `HexClassic/`
 
 Comparative study of the algorithm from **"Monte-Carlo Hex"** (Cazenave &
@@ -230,7 +232,7 @@ python train.py
 python train.py --board-size 9 --channels 128 --res-blocks 8
 
 # resume from checkpoint
-python train.py --resume checkpoints/iter_0050.pt
+python train.py --resume checkpoints/<run_id>/iter_0050.pt
 ```
 
 Evaluation against random and classical MCTS runs automatically every 5
