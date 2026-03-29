@@ -1,5 +1,6 @@
 """Gumbel AlphaZero search for Hex."""
 
+import importlib
 import math
 from dataclasses import dataclass, field
 
@@ -466,7 +467,7 @@ class GumbelMCTS:
 
 class GumbelZeroAgent:
     def __init__(self, config, network, device):
-        self.mcts = GumbelMCTS(config, network, device)
+        self.mcts = create_gumbel_mcts(config, network, device)
 
     def select_move(
         self,
@@ -488,3 +489,15 @@ class GumbelZeroAgent:
             value_threshold=value_threshold,
         )
         return action
+
+
+def create_gumbel_mcts(config, network, device):
+    backend = getattr(config, "mcts_backend", "auto")
+    if backend in {"auto", "cython"}:
+        try:
+            module = importlib.import_module("cgumbel_mcts")
+            return module.CGumbelMCTS(config, network, device)
+        except Exception:
+            if backend == "cython":
+                raise
+    return GumbelMCTS(config, network, device)

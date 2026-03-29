@@ -20,3 +20,5 @@ cdef class CHexBoard:
     cpdef int get_cell(self, int idx)
     cpdef set_cell(self, int idx, int val)
     cpdef CHexBoard clone(self)
+
+cdef object encode_board_tensor_c(CHexBoard board, int current_player)

@@ -45,8 +45,14 @@ def main():
     parser.add_argument('--eval-games', type=int, default=50)
     parser.add_argument('--eval-interval', type=int, default=5)
     parser.add_argument('--eval-mcts-simulations', type=int, default=1000)
+    parser.add_argument('--self-play-workers', type=int, default=1)
+    parser.add_argument('--mcts-backend', type=str, default='auto',
+                        choices=['auto', 'python', 'cython'])
+    parser.add_argument('--no-progress-bars', action='store_true')
+    parser.add_argument('--profile-self-play', action='store_true')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--resume', type=str, default=None)
+    parser.add_argument('--no-lr-scheduler', action='store_true', help='Disable cosine LR scheduler')
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -75,7 +81,12 @@ def main():
         eval_games=args.eval_games,
         eval_interval=args.eval_interval,
         eval_mcts_simulations=args.eval_mcts_simulations,
+        num_self_play_workers=args.self_play_workers,
+        mcts_backend=args.mcts_backend,
+        show_progress_bars=not args.no_progress_bars,
+        profile_self_play=args.profile_self_play,
         seed=args.seed,
+        use_lr_scheduler=not args.no_lr_scheduler,
     )
 
     print(f"  Hex Gumbel AlphaZero for {config.board_size}x{config.board_size} Hex")
@@ -98,6 +109,12 @@ def main():
         f"  Eval: every {config.eval_interval} iters, {config.eval_games} games, "
         f"opponent_mcts_sims={config.eval_mcts_simulations}"
     )
+    print(
+        f"  Search backend: {config.mcts_backend}, "
+        f"self-play workers={config.num_self_play_workers}"
+    )
+    print(f"  Self-play profiling: {'on' if config.profile_self_play else 'off'}")
+    print(f"  Progress bars: {'on' if config.show_progress_bars else 'off'}")
     print(f"  Device: {config.device}")
 
     trainer = Trainer(config)

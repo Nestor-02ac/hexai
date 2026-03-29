@@ -7,9 +7,19 @@ import torch.nn.functional as F
 
 from hex_board import Player
 
+try:
+    from chex_board import CHexBoard as _CHexBoard
+    from chex_board import encode_board_tensor as _encode_board_tensor
+except ImportError:
+    _CHexBoard = None
+    _encode_board_tensor = None
+
 
 def encode_board(board, current_player: int) -> torch.Tensor:
     """Encode the board with 4 feature planes and no spatial transpose."""
+    if _encode_board_tensor is not None and _CHexBoard is not None and isinstance(board, _CHexBoard):
+        return _encode_board_tensor(board, current_player)
+
     size = board.size
     n = size * size
     opponent = 3 - current_player

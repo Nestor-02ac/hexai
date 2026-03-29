@@ -6,7 +6,8 @@ import sys
 import time
 
 from hex_board import Player
-from mcts import GumbelMCTS
+from mcts import create_gumbel_mcts
+from progress import make_progress
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "HexClassic"))
 
@@ -25,10 +26,16 @@ class RandomAgent:
         return py_random.choice(board.get_empty_cells())
 
 
-def _play_eval_games_batched(config, network, device, num_games, opponent_factory, gumbel_is_black_fn):
+def _play_eval_games_batched(config, network, device, num_games, opponent_factory, gumbel_is_black_fn, progress_desc):
     """Run evaluation games in parallel with shared batched NN inference."""
     network.eval()
-    mcts = GumbelMCTS(config, network, device)
+    mcts = create_gumbel_mcts(config, network, device)
+    progress = make_progress(
+        total=num_games,
+        desc=progress_desc,
+        unit="game",
+        enabled=getattr(config, "show_progress_bars", True),
+    )
 
     boards = [_make_board(config.board_size) for _ in range(num_games)]
     gumbel_is_black = [gumbel_is_black_fn(i) for i in range(num_games)]
@@ -38,6 +45,12 @@ def _play_eval_games_batched(config, network, device, num_games, opponent_factor
     in_search = [False] * num_games
     finished = [False] * num_games
     winners = [Player.EMPTY for _ in range(num_games)]
+    moves_played = [0]
+
+    def _refresh_progress(force=False):
+        if force or moves_played[0] == 1 or moves_played[0] % 8 == 0:
+            active_games = sum(0 if is_finished else 1 for is_finished in finished)
+            progress.set_postfix(moves=moves_played[0], active=active_games)
 
     def _is_gumbel_turn(game_idx):
         if gumbel_is_black[game_idx]:
@@ -50,9 +63,13 @@ def _play_eval_games_batched(config, network, device, num_games, opponent_factor
 
     def _play_move(game_idx, action):
         boards[game_idx].play(action, currents[game_idx])
+        moves_played[0] += 1
+        _refresh_progress()
         if boards[game_idx].check_win(currents[game_idx]):
             winners[game_idx] = currents[game_idx]
             finished[game_idx] = True
+            progress.update(1)
+            _refresh_progress(force=True)
             return
         currents[game_idx] = Player.WHITE if currents[game_idx] == Player.BLACK else Player.BLACK
 
@@ -127,6 +144,8 @@ def _play_eval_games_batched(config, network, device, num_games, opponent_factor
             else:
                 mcts.finish_leaf(extra, policy_logits, value, legal_actions)
 
+    _refresh_progress(force=True)
+    progress.close()
     return winners, gumbel_is_black
 
 
@@ -141,6 +160,7 @@ def evaluate_vs_random(config, network, device, num_games=None):
         num_games,
         opponent_factory=RandomAgent,
         gumbel_is_black_fn=lambda idx: idx % 2 == 0,
+        progress_desc="    eval random",
     )
     wins = 0
     for game_idx in range(num_games):
@@ -186,6 +206,7 @@ def evaluate_vs_classical_mcts(config, network, device, mcts_sims=None, num_game
         num_games,
         opponent_factory=make_opponent,
         gumbel_is_black_fn=lambda idx: idx % 2 == 0,
+        progress_desc="    eval classic",
     )
     wins = 0
     for game_idx in range(num_games):

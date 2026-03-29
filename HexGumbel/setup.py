@@ -1,16 +1,13 @@
-"""
-Build Cython board extension.
-Only chex_board needs compilation; MCTS is pure Python (needs PyTorch callbacks).
+"""Build Cython extensions for HexGumbel."""
 
-Usage: python setup.py build_ext --inplace
-"""
-
+import numpy as np
 from setuptools import setup
 from Cython.Build import cythonize
 from setuptools.extension import Extension
 
 extensions = [
-    Extension("chex_board", ["chex_board.pyx"]),
+    Extension("chex_board", ["chex_board.pyx"], include_dirs=[np.get_include()]),
+    Extension("cgumbel_mcts", ["cgumbel_mcts.pyx"], include_dirs=[np.get_include()]),
 ]
 
 setup(

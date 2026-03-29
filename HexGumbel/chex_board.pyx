@@ -17,6 +17,10 @@ Build: python setup.py build_ext --inplace (requires Cython).
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy, memset
 
+import numpy as np
+import torch
+cimport numpy as cnp
+
 # Re-export Player for compatibility
 from hex_board import Player
 
@@ -325,3 +329,33 @@ cdef class CHexBoard:
                                for c in range(self.size))
             print(f"{indent}{r:2d} {row_str}")
         print()
+
+
+cdef object encode_board_tensor_c(CHexBoard board, int current_player):
+    """Encode CHexBoard directly from its C array without Python cell lookups."""
+    cdef int size = board.size
+    cdef int n = board.n
+    cdef int idx
+    cdef int row
+    cdef int col
+    cdef int cell
+    cdef int opponent = 3 - current_player
+    cdef int player_plane = 2 if current_player == Player.BLACK else 3
+    cdef cnp.ndarray[cnp.float32_t, ndim=3] state = np.zeros((4, size, size), dtype=np.float32)
+    cdef cnp.float32_t[:, :, :] state_view = state
+
+    for idx in range(n):
+        row = idx // size
+        col = idx - row * size
+        state_view[player_plane, row, col] = 1.0
+        cell = board.board[idx]
+        if cell == current_player:
+            state_view[0, row, col] = 1.0
+        elif cell == opponent:
+            state_view[1, row, col] = 1.0
+
+    return torch.from_numpy(state)
+
+
+def encode_board_tensor(board, current_player):
+    return encode_board_tensor_c(board, current_player)

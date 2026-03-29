@@ -57,7 +57,12 @@ class GumbelZeroConfig:
     # Infrastructure
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     num_self_play_workers: int = 1
+    mcts_backend: str = "auto"  # auto|python|cython
+    show_progress_bars: bool = True
+    profile_self_play: bool = False
     seed: int = 42
+    # Learning rate scheduler
+    use_lr_scheduler: bool = True
 
     def __post_init__(self):
         if self.num_simulations == 0:
@@ -75,6 +80,10 @@ class GumbelZeroConfig:
             self.eval_select_action_by_softmax_count,
             "evaluation",
         )
+        if self.num_self_play_workers < 1:
+            raise ValueError("num_self_play_workers must be >= 1")
+        if self.mcts_backend not in {"auto", "python", "cython"}:
+            raise ValueError("mcts_backend must be one of: auto, python, cython")
 
     @property
     def action_space(self) -> int:

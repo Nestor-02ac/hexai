@@ -1,8 +1,17 @@
-build_manim_video.py
-manim_hex_visualization.py
-prepare_manim_data.py
-media/
-.matplotlib/
-*/__pycache__/*
-*/checkpoints/*
-__pycache__
+# Python
+__pycache__/
+*/__pycache__/
+
+# Build artifacts
+build/
+*.c
+*.so
+
+# Matplotlib config
+visualization/.matplotlib/
+
+# Checkpoints (tracked selectively)
+*/checkpoints/*/
+
+# OS
+.DS_Store
