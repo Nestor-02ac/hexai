@@ -162,14 +162,11 @@ class YBoard:
 
     def clone(self):
         new = YBoard.__new__(YBoard)
+
         new.size = self.size
         new.n = self.n
         new.board = self.board[:]
         new.move_count = self.move_count
-
-        new.SIDE_A = self.SIDE_A
-        new.SIDE_B = self.SIDE_B
-        new.SIDE_C = self.SIDE_C
 
         new.parent = {
             1: self.parent[1][:],
@@ -180,11 +177,22 @@ class YBoard:
             2: self.rank[2][:]
         }
 
+        # Side tracking (CRUCIAL for Y)
+        new.side_mask = {
+            1: self.side_mask[1][:],
+            2: self.side_mask[2][:]
+        }
+
         new.row_starts = self.row_starts
         new._neighbors = self._neighbors
         new._side_a = self._side_a
         new._side_b = self._side_b
         new._side_c = self._side_c
+
+        # Bit flags 
+        new.LEFT = self.LEFT
+        new.RIGHT = self.RIGHT
+        new.BOTTOM = self.BOTTOM
 
         return new
 
