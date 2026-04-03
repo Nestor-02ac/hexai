@@ -242,6 +242,211 @@ class GumbelMCTS:
 
         child = self._decide_action_child(search.root, search.candidates, **kwargs)
         return child.action, self._improved_policy(search.root, search.player)
+    
+    def _expand_from_logits(self, node, to_play, policy_logits_np, value, legal_actions, add_noise=False):
+        policy_logits_np = np.asarray(policy_logits_np, dtype=np.float32).reshape(-1)
+        node.value = float(value)
+        node.children = {}
+
+        masked_logits = np.full(self.config.action_space, -np.inf, dtype=np.float32)
+        for action in legal_actions:
+            masked_logits[action] = policy_logits_np[action]
+        priors = _masked_softmax(masked_logits)
+
+        for action in legal_actions:
+            node.children[action] = Node(
+                action=action,
+                action_player=to_play,
+                prior=float(priors[action]),
+                policy_logit=float(policy_logits_np[action]),
+            )
+
+        if add_noise and node.children:
+            noise = np.random.gumbel(size=len(node.children))
+            for child, gumbel in zip(node.children.values(), noise):
+                child.policy_noise = float(gumbel)
+                child.policy_logit += float(gumbel)
+
+        return node.value
+
+    def _select_root_candidate(self, search):
+        if not search.candidates:
+            return None
+        return min(search.candidates, key=lambda node: (node.count, -node.policy_logit))
+
+    def _select_child_by_puct(self, node):
+        total_simulation = max(0, node.count - 1)
+        init_q_value = self._calculate_init_q_value(node)
+        best_child = None
+        best_score = -float("inf")
+        best_prior = -float("inf")
+        for child in node.children.values():
+            score = child.puct_score(total_simulation, self.config, init_q_value)
+            if score > best_score or (score == best_score and child.prior > best_prior):
+                best_score = score
+                best_prior = child.prior
+                best_child = child
+        return best_child
+
+    def _calculate_init_q_value(self, node):
+        visited = [child.normalized_mean(self.config) for child in node.children.values() if child.count > 0]
+        if not visited:
+            return -1.0
+        return (sum(visited) - 1.0) / (len(visited) + 1.0)
+
+    def _backup(self, path, value):
+        updated_value = value
+        path[-1].value = value
+        for node in reversed(path):
+            node.add(updated_value)
+            updated_value = node.reward + self.config.reward_discount * updated_value
+
+    def _initialize_candidates(self, search):
+        search.candidates = sorted(
+            search.root.children.values(),
+            key=lambda node: node.policy_logit,
+            reverse=True,
+        )
+        if len(search.candidates) > self.config.gumbel_sample_size:
+            search.candidates = search.candidates[:self.config.gumbel_sample_size]
+        search.sample_size = self.config.gumbel_sample_size
+        if len(search.candidates) <= 1:
+            search.simulation_budget = self.config.num_simulations
+        else:
+            search.simulation_budget = self._initial_budget(search.sample_size)
+
+    def _advance_search(self, search):
+        if len(search.candidates) <= 1 or search.sample_size <= 2:
+            return
+        for node in search.candidates:
+            if node.count < search.simulation_budget:
+                return
+
+        next_budget = self._next_phase_budget(search.sample_size)
+        if next_budget <= 0 or search.sample_size <= 2:
+            return
+
+        search.sample_size //= 2
+        self._sort_candidates_by_score(search.root, search.candidates)
+        if len(search.candidates) > search.sample_size:
+            search.candidates = search.candidates[:search.sample_size]
+        if search.candidates:
+            search.simulation_budget = search.candidates[0].count + next_budget
+
+    def _initial_budget(self, sample_size):
+        if sample_size <= 1:
+            return self.config.num_simulations
+        log_sample_size = math.log2(self.config.gumbel_sample_size)
+        denom = log_sample_size * sample_size
+        if denom <= 0:
+            return self.config.num_simulations
+        return max(1, int(math.floor(self.config.num_simulations / denom)))
+
+    def _next_phase_budget(self, sample_size):
+        if sample_size <= 1:
+            return 0
+        log_sample_size = math.log2(self.config.gumbel_sample_size)
+        denom = log_sample_size * sample_size / 2.0
+        if denom <= 0:
+            return 0
+        return int(math.floor(self.config.num_simulations / denom))
+
+    def _sort_candidates_by_score(self, root, candidates):
+        max_child_count = max((child.count for child in root.children.values()), default=0)
+        min_value = -float("inf")
+
+        def score(child):
+            if child.count == 0:
+                return min_value
+            value = child.normalized_mean(self.config)
+            scale = (self.config.gumbel_sigma_visit_c + max_child_count) * self.config.gumbel_sigma_scale_c
+            return child.policy_logit + scale * value
+
+        candidates.sort(key=score, reverse=True)
+
+    def _decide_action_child(
+        self,
+        root,
+        candidates,
+        select_action_by_count=None,
+        select_action_by_softmax_count=None,
+        temperature=None,
+        value_threshold=None,
+    ):
+        if select_action_by_count is None:
+            select_action_by_count = self.config.select_action_by_count
+        if select_action_by_softmax_count is None:
+            select_action_by_softmax_count = self.config.select_action_by_softmax_count
+        if select_action_by_count == select_action_by_softmax_count:
+            raise ValueError("exactly one root action selection mode must be enabled")
+
+        if select_action_by_count:
+            ranked_candidates = list(candidates) if candidates else list(root.children.values())
+            self._sort_candidates_by_score(root, ranked_candidates)
+            return ranked_candidates[0]
+
+        if temperature is None:
+            temperature = self.config.select_action_softmax_temperature
+        if value_threshold is None:
+            value_threshold = self.config.select_action_value_threshold
+        return self._select_child_by_softmax_count(root, temperature, value_threshold)
+
+    def _select_child_by_softmax_count(self, root, temperature=1.0, value_threshold=0.1):
+        visited_children = [child for child in root.children.values() if child.count > 0]
+        if not visited_children:
+            return max(root.children.values(), key=lambda child: child.policy_logit)
+
+        best_child = max(visited_children, key=lambda child: child.count)
+        if temperature <= 0:
+            return best_child
+
+        best_mean = best_child.normalized_mean(self.config)
+        eligible = []
+        weights = []
+        for child in root.children.values():
+            if child.count <= 0:
+                continue
+            mean = child.normalized_mean(self.config)
+            if mean < best_mean - value_threshold:
+                continue
+            weight = child.count ** (1.0 / temperature)
+            if weight <= 0:
+                continue
+            eligible.append(child)
+            weights.append(weight)
+
+        if not eligible:
+            return best_child
+
+        probs = np.asarray(weights, dtype=np.float64)
+        probs /= probs.sum()
+        idx = int(np.random.choice(len(eligible), p=probs))
+        return eligible[idx]
+
+    def _improved_policy(self, root, player):
+        visited_children = [child for child in root.children.values() if child.count > 0]
+        pi_sum = sum(child.prior for child in visited_children)
+        q_sum = sum(child.prior * child.normalized_mean(self.config) for child in visited_children)
+
+        root_value = root.value
+        if player == self.config.value_flipping_player:
+            root_value = -root_value
+
+        if pi_sum > 0:
+            non_visited_value = (
+                root_value + (self.config.num_simulations / pi_sum) * q_sum
+            ) / (1 + self.config.num_simulations)
+        else:
+            non_visited_value = root_value
+
+        max_child_count = max((child.count for child in root.children.values()), default=0)
+        scale = (self.config.gumbel_sigma_visit_c + max_child_count) * self.config.gumbel_sigma_scale_c
+        logits = np.full(self.config.action_space, -np.inf, dtype=np.float32)
+        for child in root.children.values():
+            value = non_visited_value if child.count == 0 else child.normalized_mean(self.config)
+            logit_without_noise = child.policy_logit - child.policy_noise
+            logits[child.action] = logit_without_noise + scale * value
+        return _masked_softmax(logits)
 
     @staticmethod
     def _terminal_value(winner):

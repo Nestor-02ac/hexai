@@ -84,7 +84,7 @@ class YNet(nn.Module):
         super().__init__()
 
         self.board_size = board_size
-        self.action_size = board_size * board_size  # includes invalid cells
+        self.action_size = board_size * (board_size + 1) // 2  # includes invalid cells
 
         # Shared trunk
         self.conv_stem = nn.Conv2d(4, num_channels, 3, padding=1, bias=False)
@@ -97,12 +97,14 @@ class YNet(nn.Module):
         # Policy head
         self.policy_conv = nn.Conv2d(num_channels, 2, 1, bias=False)
         self.policy_bn = nn.BatchNorm2d(2)
-        self.policy_fc = nn.Linear(2 * self.action_size, self.action_size)
+        #self.policy_fc = nn.Linear(2 * self.action_size, self.action_size)
+        self.policy_fc = nn.Linear(2 * board_size * board_size, self.action_size)
 
         # Value head
         self.value_conv = nn.Conv2d(num_channels, 1, 1, bias=False)
         self.value_bn = nn.BatchNorm2d(1)
-        self.value_fc1 = nn.Linear(self.action_size, num_channels)
+        #self.value_fc1 = nn.Linear(self.action_size, num_channels)
+        self.value_fc1 = nn.Linear(board_size * board_size, num_channels)
         self.value_fc2 = nn.Linear(num_channels, 1)
 
     def forward(self, x):
