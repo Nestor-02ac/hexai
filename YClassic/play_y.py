@@ -62,7 +62,7 @@ def human_move(board, player):
 
         except (ValueError, KeyboardInterrupt):
             print("\n  Invalid input. Enter: row col")
-
+ 
 
 def play_interactive(size=5, num_sims=5000, human_color='black'):
     """Play Y against MCTS AI."""

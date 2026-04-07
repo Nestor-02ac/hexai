@@ -105,6 +105,77 @@ class MCTSY:
 
                 cur = 3 - cur
 
+            # Selection with RAVE
+            while not node.untried_moves and node.children:
+                best_val = -1.0
+                best_child = None
+                parent_visits = node.visits
+
+                log_pv = log(parent_visits) if parent_visits > 0 else 0
+
+                if self.use_rave:
+                    n_rv = node.rave_visits
+                    n_rw = node.rave_wins
+
+                    for child in node.children:
+                        cv = child.visits
+
+                        if cv == 0:
+                            rc = n_rv.get(child.move, 0)
+                            if rc > 0:
+                                val = n_rw.get(child.move, 0) / rc
+                            else:
+                                val = float('inf')
+                        else:
+                            m = child.wins / cv
+                            rc = n_rv.get(child.move, 0)
+
+                            if rc > 0:
+                                rw = n_rw.get(child.move, 0)
+                                coef = 1.0 - rc / (rc + cv + rc * cv * self.rave_bias)
+
+                                # clamp for safety
+                                if coef < 0.0:
+                                    coef = 0.0
+                                elif coef > 1.0:
+                                    coef = 1.0
+
+                                val = m * coef + (1.0 - coef) * (rw / rc)
+                            else:
+                                val = m
+
+                            if self.c_uct > 0 and parent_visits > 0:
+                                val += self.c_uct * math.sqrt(log_pv / cv)
+
+                        if val > best_val:
+                            best_val = val
+                            best_child = child
+
+                else:
+                    for child in node.children:
+                        cv = child.visits
+
+                        if cv == 0:
+                            val = float('inf')
+                        else:
+                            val = child.wins / cv
+                            if self.c_uct > 0:
+                                val += self.c_uct * math.sqrt(log_pv / cv)
+
+                        if val > best_val:
+                            best_val = val
+                            best_child = child
+
+                node = best_child
+                sim_board.play(node.move, cur)
+
+                if cur == 1:
+                    tree_black_moves.add(node.move)
+                else:
+                    tree_white_moves.add(node.move)
+
+                cur = 3 - cur
+
             # Expansion
             if node.untried_moves:
                 idx = random.randrange(len(node.untried_moves))
@@ -129,20 +200,52 @@ class MCTSY:
                 node = child
                 cur = 3 - cur
 
-            # Simulation (pure random)
+            # Simulation (improved rollout)
             empties = sim_board.get_empty_cells()
-            random.shuffle(empties)
 
             black_sim = set(tree_black_moves)
             white_sim = set(tree_white_moves)
 
             p = cur
-            for cell in empties:
-                sim_board.play(cell, p)
+
+            def move_score(cell, player):
+                """Heuristic: favor connectivity + side expansion"""
+                score = 0
+
+                # 1. Favor neighbors of same color (connect groups)
+                for n in sim_board._neighbors[cell]:
+                    if sim_board.board[n] == player:
+                        score += 2
+                    elif sim_board.board[n] == 3 - player:
+                        score += 0.5  # mild blocking
+
+                # 2. Favor touching new sides
+                if cell in sim_board._side_a:
+                    score += 1
+                if cell in sim_board._side_b:
+                    score += 1
+                if cell in sim_board._side_c:
+                    score += 1
+
+                return score
+
+
+            while empties:
+                # Pick best move among a random subset
+                k = min(6, len(empties))  # sample size (tune 4–10)
+                sample = random.sample(empties, k)
+
+                best_cell = max(sample, key=lambda c: move_score(c, p))
+
+                empties.remove(best_cell)
+
+                sim_board.play(best_cell, p)
+
                 if p == 1:
-                    black_sim.add(cell)
+                    black_sim.add(best_cell)
                 else:
-                    white_sim.add(cell)
+                    white_sim.add(best_cell)
+
                 p = 3 - p
 
             # Winner
@@ -155,8 +258,22 @@ class MCTSY:
             current = node
             while current is not None:
                 current.visits += 1
+
                 if current.player == winner:
                     current.wins += 1.0
+
+                if self.use_rave and current.player is not None:
+                    next_p = 3 - current.player
+                    moves_set = black_sim if next_p == 1 else white_sim
+
+                    rv = current.rave_visits
+                    rw = current.rave_wins
+                    is_win = (winner == next_p)
+
+                    for mv in moves_set:
+                        rv[mv] = rv.get(mv, 0) + 1
+                        if is_win:
+                            rw[mv] = rw.get(mv, 0) + 1.0
 
                 current = current.parent
 
@@ -192,4 +309,5 @@ if __name__ == "__main__":
             print(f"{current_player} wins!")
             break
 
-        current_player = Player.WHITE if current_player == Player.BLACK else Player.BLACK
+        current_player = Player.WHITE if current_player == Player.BLACK else Player.BLACK  
+    
