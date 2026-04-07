@@ -69,25 +69,17 @@ def main():
 
     args = parser.parse_args()
 
-    # ---------------------------
-    # Seeding
-    # ---------------------------
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    # ---------------------------
-    # Auto simulations (Y-specific)
-    # ---------------------------
+    # Auto simulations
     if args.simulations == 0:
         args.simulations = args.board_size * (args.board_size + 1) // 2
 
     if args.gumbel_sample_size == 0:
         args.gumbel_sample_size = args.simulations
 
-    # ---------------------------
-    # Config
-    # ---------------------------
     config = GumbelZeroConfig(
         board_size=args.board_size,
         num_channels=args.channels,
@@ -130,9 +122,7 @@ def main():
         use_lr_scheduler=not args.no_lr_scheduler,
     )
 
-    # ---------------------------
-    # Logging
-    # ---------------------------
+
     num_cells = args.board_size * (args.board_size + 1) // 2
 
     print(f"  Y Gumbel AlphaZero (size={config.board_size}, cells={num_cells})")
@@ -166,9 +156,6 @@ def main():
 
     print(f"  Device: {config.device}")
 
-    # ---------------------------
-    # Trainer
-    # ---------------------------
     trainer = Trainer(config)
 
     trainer.configure_run(
