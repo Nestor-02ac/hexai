@@ -1,38 +1,21 @@
 # Monte Carlo Tree Search for Hex and Y
 
+![HexClassic vs HexGumbel dashboard](visualization/hex_dashboard_7x7.gif)
+
 This repository contains a unified study of search-based agents for connection
-games. It currently covers three modules:
+games of Hex and Y variation. It currently covers three modules:
 
 | Module | Game | Method | Status |
 |---|---|---|---|
-| `HexClassic/` | Hex | UCT + RAVE + bridge rollouts | Reproduced and benchmarked |
-| `HexGumbel/` | Hex | Gumbel AlphaZero with supervised warm start | Trained and evaluated |
-| `YClassic/` | Y | UCT + RAVE + connectivity rollouts | Implemented, optimized, and validated |
+| `HexClassic/` | Hex | UCT + RAVE + bridge rollouts |
+| `HexGumbel/` | Hex | Gumbel AlphaZero with supervised warm start |
+| `YClassic/` | Y | UCT + RAVE + connectivity rollouts |
+
 
 The codebase is organized so that the classical and learned agents can be
 compared inside one engineering framework rather than as unrelated projects.
 The detailed write-up lives in [report/report.tex](report/report.tex).
 
-![HexClassic vs HexGumbel dashboard](visualization/hex_dashboard_7x7.gif)
-
----
-
-## Shared Engineering
-
-The repository uses one implementation strategy across the classical modules.
-
-- Each game has a pure Python reference path and a Cython fast path with the
-  same public API.
-- Connectivity is tracked incrementally with Union-Find instead of recomputing
-  graph searches after every move.
-- MCTS hot loops move to typed arrays and pooled nodes in Cython so that the
-  search algorithm stays the same while the execution model gets faster.
-- Parallel experiments are seeded explicitly so multiprocessing does not
-  duplicate RNG state across workers.
-
-The point is to keep the algorithmic comparison clean: Hex and Y differ in
-board geometry and rollout knowledge, not in whether one version got a much
-more serious implementation effort than the other.
 
 ---
 
