@@ -1,0 +1,34 @@
+\begin{thebibliography}{1}
+
+\bibitem{boardspace_y}
+{Boardspace.net}.
+\newblock Game of y.
+\newblock \url{https://www.boardspace.net/english/about_y.html}, 2026.
+\newblock Accessed 2026-04-08.
+
+\bibitem{cazenave2010montecarlohex}
+T.~Cazenave and A.~Saffidine.
+\newblock Monte-carlo hex.
+\newblock In {\em Computers and Games}, 2010.
+
+\bibitem{danihelka2022gumbel}
+I.~Danihelka, M.~Schmid, D.~Horgan, J.~Schrittwieser, I.~Antonoglou,
+  L.~Espeholt, T.~Hubert, K.~Simonyan, L.~Sifre, T.~Schaul, M.~Lai, A.~Guez,
+  M.~Lanctot, T.~Graepel, D.~Hassabis, and D.~Silver.
+\newblock Policy improvement by planning with gumbel.
+\newblock {\em International Conference on Learning Representations}, 2022.
+
+\bibitem{gambiter_y}
+{Gambiter}.
+\newblock Y - game.
+\newblock \url{https://gambiter.com/connection/Y_game.html}, 2026.
+\newblock Accessed 2026-04-08.
+
+\bibitem{silver2017mastering}
+D.~Silver, J.~Schrittwieser, K.~Simonyan, I.~Antonoglou, A.~Huang, A.~Guez,
+  T.~Hubert, L.~Baker, M.~Lai, A.~Bolton, Y.~Chen, T.~Lillicrap, F.~Hui,
+  L.~Sifre, G.~van~den Driessche, T.~Graepel, and D.~Hassabis.
+\newblock Mastering the game of go without human knowledge.
+\newblock {\em Nature}, 550(7676):354--359, 2017.
+
+\end{thebibliography}

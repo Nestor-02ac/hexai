@@ -1,8 +1,13 @@
 """
-Y Game Board implementation (triangular grid) with Union-Find.
+Y board implementation on a regular triangular hex grid.
 
-- Two players
-- Goal: connect ALL THREE sides of the triangle
+Y is played on a triangular board of hex-connected cells. A player wins by
+forming a connected group that touches all three sides of the triangle. Corner
+cells count as belonging to both adjacent sides.
+
+This code uses the regular-triangle variant rather than the commercial Kadon
+board with three pentagons. That is still a standard way to play Y and matches
+the triangular grid assumed by the rest of this repository.
 """
 
 from enum import IntEnum
@@ -15,70 +20,100 @@ class Player(IntEnum):
 
     @property
     def opponent(self):
-        return Player(3 - self) if self != Player.EMPTY else Player.EMPTY
+        if self == Player.BLACK:
+            return Player.WHITE
+        if self == Player.WHITE:
+            return Player.BLACK
+        return Player.EMPTY
+
+
+# Regular triangular board with hex connectivity.
+Y_NEIGHBORS = [
+    (0, -1),   # left
+    (0, 1),    # right
+    (-1, -1),  # up-left
+    (-1, 0),   # up-right
+    (1, 0),    # down-left
+    (1, 1),    # down-right
+]
 
 
 class YBoard:
-    def __init__(self, size=5):
-        self.size = size
+    """
+    Y board with per-player Union-Find connectivity and side masks.
 
-        # total number of cells = N(N+1)/2
+    Components carry a 3-bit side mask:
+      LEFT   = 0b001
+      RIGHT  = 0b010
+      BOTTOM = 0b100
+
+    A component wins as soon as its mask becomes 0b111.
+    """
+
+    LEFT = 1
+    RIGHT = 2
+    BOTTOM = 4
+    ALL_SIDES = LEFT | RIGHT | BOTTOM
+
+    def __init__(self, size=9):
+        self.size = size
         self.n = size * (size + 1) // 2
         self.board = [0] * self.n
         self.move_count = 0
 
-        # Virtual nodes for the 3 sides
-        self.SIDE_A = self.n
-        self.SIDE_B = self.n + 1
-        self.SIDE_C = self.n + 2
-        # Bitmask values for sides : 001 -> touches LEFT, 011 -> touches LEFT + RIGHT, 111 -> WIN
-        self.LEFT = 1
-        self.RIGHT = 2
-        self.BOTTOM = 4
+        # Per-player Union-Find state. Index 0 is unused to allow direct
+        # indexing by player id (1 or 2).
+        self.parent = [
+            None,
+            list(range(self.n)),
+            list(range(self.n)),
+        ]
+        self.rank = [
+            None,
+            [0] * self.n,
+            [0] * self.n,
+        ]
+        self.component_mask = [
+            None,
+            [0] * self.n,
+            [0] * self.n,
+        ]
+        self._winner = [False, False, False]
 
-        total = self.n + 3
+        self.row_starts = [0] * size
+        self._row_of_idx = [0] * self.n
+        self._col_of_idx = [0] * self.n
 
-        # Separate union-find per player
-        self.parent = {
-            1: list(range(total)),
-            2: list(range(total))
-        }
-        self.rank = {
-            1: [0] * total,
-            2: [0] * total
-        }
-
-        # Precompute row starts
-        self.row_starts = []
         idx = 0
         for r in range(size):
-            self.row_starts.append(idx)
-            idx += (r + 1)
+            self.row_starts[r] = idx
+            for c in range(r + 1):
+                self._row_of_idx[idx] = r
+                self._col_of_idx[idx] = c
+                idx += 1
 
-        # Precompute neighbors
+        self._cell_side_mask = [0] * self.n
         self._neighbors = [[] for _ in range(self.n)]
+
         for r in range(size):
             for c in range(r + 1):
                 idx = self.rc_to_idx(r, c)
 
-                directions = [
-                    (r, c - 1),     # left
-                    (r, c + 1),     # right
-                    (r - 1, c - 1), # up-left
-                    (r - 1, c),     # up-right
-                    (r + 1, c),     # down-left
-                    (r + 1, c + 1), # down-right
-                ]
+                mask = 0
+                if c == 0:
+                    mask |= self.LEFT
+                if c == r:
+                    mask |= self.RIGHT
+                if r == size - 1:
+                    mask |= self.BOTTOM
+                self._cell_side_mask[idx] = mask
 
-                for nr, nc in directions:
+                nbrs = self._neighbors[idx]
+                for dr, dc in Y_NEIGHBORS:
+                    nr = r + dr
+                    nc = c + dc
                     if 0 <= nr < size and 0 <= nc <= nr:
-                        self._neighbors[idx].append(self.rc_to_idx(nr, nc))
-
-        self._side_a = {self.rc_to_idx(r, 0) for r in range(size)}         # LEFT
-        self._side_b = {self.rc_to_idx(r, r) for r in range(size)}          # RIGHT
-        self._side_c = {self.rc_to_idx(size - 1, c) for c in range(size)}   # BOTTOM
-
-        self.side_mask = {1: [0] * (self.n + 3), 2: [0] * (self.n + 3)}
+                        nbrs.append(self.rc_to_idx(nr, nc))
 
     def _find(self, x, player):
         parent = self.parent[player]
@@ -92,60 +127,77 @@ class YBoard:
     def _union(self, a, b, player):
         parent = self.parent[player]
         rank = self.rank[player]
-        mask = self.side_mask[player]
+        component_mask = self.component_mask[player]
 
         ra = self._find(a, player)
         rb = self._find(b, player)
         if ra == rb:
-            return
+            return ra
 
         if rank[ra] < rank[rb]:
             ra, rb = rb, ra
 
         parent[rb] = ra
-
-        # critical: merge side info
-        mask[ra] |= mask[rb]
-
+        component_mask[ra] |= component_mask[rb]
         if rank[ra] == rank[rb]:
             rank[ra] += 1
+        return ra
+
+    def clone(self):
+        """Fast deep copy that reuses precomputed read-only tables."""
+        new = YBoard.__new__(YBoard)
+        new.size = self.size
+        new.n = self.n
+        new.board = self.board[:]
+        new.move_count = self.move_count
+        new.parent = [
+            None,
+            self.parent[1][:],
+            self.parent[2][:],
+        ]
+        new.rank = [
+            None,
+            self.rank[1][:],
+            self.rank[2][:],
+        ]
+        new.component_mask = [
+            None,
+            self.component_mask[1][:],
+            self.component_mask[2][:],
+        ]
+        new._winner = self._winner[:]
+        new.row_starts = self.row_starts
+        new._row_of_idx = self._row_of_idx
+        new._col_of_idx = self._col_of_idx
+        new._cell_side_mask = self._cell_side_mask
+        new._neighbors = self._neighbors
+        return new
 
     def play(self, idx, player):
+        """Place a stone at idx if empty. Returns True on success."""
         if self.board[idx] != 0:
             return False
+        self.play_unchecked(idx, player)
+        return True
 
+    def play_unchecked(self, idx, player):
+        """Place a stone without legality checks."""
         self.board[idx] = player
         self.move_count += 1
 
-        # Connect to same-color neighbors
+        component_mask = self.component_mask[player]
+        component_mask[idx] = self._cell_side_mask[idx]
+
         for nidx in self._neighbors[idx]:
             if self.board[nidx] == player:
                 self._union(idx, nidx, player)
 
-        # Compute which sides this move touches
-        mask = 0
-        if idx in self._side_a:
-            mask |= self.LEFT
-        if idx in self._side_b:
-            mask |= self.RIGHT
-        if idx in self._side_c:
-            mask |= self.BOTTOM
-
-        # Find root AFTER neighbor unions
         root = self._find(idx, player)
-
-        # Assign side info
-        self.side_mask[player][root] |= mask
-
-        return True
+        if component_mask[root] == self.ALL_SIDES:
+            self._winner[player] = True
 
     def check_win(self, player):
-        for i in range(self.n):
-            if self.board[i] == player:
-                root = self._find(i, player)
-                if self.side_mask[player][root] == 7:
-                    return True
-        return False
+        return self._winner[player]
 
     def get_empty_cells(self):
         return [i for i in range(self.n) if self.board[i] == 0]
@@ -154,50 +206,10 @@ class YBoard:
         return self.row_starts[r] + c
 
     def idx_to_rc(self, idx):
-        for r in range(self.size):
-            start = self.row_starts[r]
-            end = start + r + 1
-            if start <= idx < end:
-                return r, idx - start
-
-    def clone(self):
-        new = YBoard.__new__(YBoard)
-
-        new.size = self.size
-        new.n = self.n
-        new.board = self.board[:]
-        new.move_count = self.move_count
-
-        new.parent = {
-            1: self.parent[1][:],
-            2: self.parent[2][:]
-        }
-        new.rank = {
-            1: self.rank[1][:],
-            2: self.rank[2][:]
-        }
-
-        # Side tracking (CRUCIAL for Y)
-        new.side_mask = {
-            1: self.side_mask[1][:],
-            2: self.side_mask[2][:]
-        }
-
-        new.row_starts = self.row_starts
-        new._neighbors = self._neighbors
-        new._side_a = self._side_a
-        new._side_b = self._side_b
-        new._side_c = self._side_c
-
-        # Bit flags 
-        new.LEFT = self.LEFT
-        new.RIGHT = self.RIGHT
-        new.BOTTOM = self.BOTTOM
-
-        return new
+        return self._row_of_idx[idx], self._col_of_idx[idx]
 
     def display(self):
-        symbols = {0: '.', 1: 'B', 2: 'W'}
+        symbols = {0: ".", 1: "B", 2: "W"}
         for r in range(self.size):
             indent = " " * (self.size - r - 1)
             row = []
@@ -206,23 +218,3 @@ class YBoard:
                 row.append(symbols[self.board[idx]])
             print(indent + " ".join(row))
         print()
-
-
-if __name__ == "__main__":
-
-    board = YBoard(size=5)
-
-    board.play(board.rc_to_idx(0, 0), Player.BLACK)  # touches L+R
-    board.play(board.rc_to_idx(2, 0), Player.BLACK)  # touches L
-    board.play(board.rc_to_idx(4, 1), Player.BLACK)  # touches B
-    board.play(board.rc_to_idx(4, 4), Player.BLACK)  # touches R+B
-
-    board.play(board.rc_to_idx(1, 1), Player.WHITE)
-    board.play(board.rc_to_idx(2, 2), Player.WHITE)
-    board.play(board.rc_to_idx(3, 2), Player.WHITE)
-    board.play(board.rc_to_idx(3, 3), Player.WHITE)
-
-    board.display()
-
-    print("BLACK wins?", board.check_win(Player.BLACK))  # False
-    print("WHITE wins?", board.check_win(Player.WHITE))  # False
