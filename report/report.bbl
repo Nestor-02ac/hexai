@@ -1,4 +1,10 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
+
+\bibitem{arneson2010mctshex}
+B.~Arneson, R.~B. Hayward, and P.~Henderson.
+\newblock Monte carlo tree search in hex.
+\newblock {\em IEEE Transactions on Computational Intelligence and AI in
+  Games}, 2(4):251--258, 2010.
 
 \bibitem{boardspace_y}
 {Boardspace.net}.
@@ -6,20 +12,26 @@
 \newblock \url{https://www.boardspace.net/english/about_y.html}.
 \newblock Accessed 2026-04-08.
 
+\bibitem{cazenave2020polygames}
+T.~Cazenave, Y.-C. Chen, G.-W. Chen, S.-Y. Chen, X.-D. Chiu, J.~Dehos, M.~Elsa,
+  Q.~Gong, H.~Hu, V.~Khalidov, C.-L. Li, H.-I. Lin, Y.-J. Lin, X.~Martinet,
+  V.~Mella, J.~Rapin, B.~Roziere, G.~Synnaeve, F.~Teytaud, O.~Teytaud, S.-C.
+  Ye, Y.-J. Ye, S.-J. Yen, and S.~Zagoruyko.
+\newblock Polygames: Improved zero learning.
+\newblock {\em ICGA Journal}, 42(4):244--256, 2020.
+
 \bibitem{cazenave2010montecarlohex}
 T.~Cazenave and A.~Saffidine.
 \newblock Monte-carlo hex.
 \newblock In H.~J. Herik, H.~Iida, and A.~Plaat, editors, {\em Computers and
   Games: 7th International Conference, CG 2010, Kanazawa, Japan, September
   24--26, 2010, Revised Selected Papers}, volume 6515 of {\em Lecture Notes in
-  Computer Science}. Springer Berlin Heidelberg, 2010.
-\newblock Proceedings metadata verified from Springer.
+  Computer Science}. Springer Berlin Heidelberg, 2011.
 
 \bibitem{danihelka2022gumbel}
 I.~Danihelka, A.~Guez, J.~Schrittwieser, and D.~Silver.
 \newblock Policy improvement by planning with gumbel.
 \newblock In {\em International Conference on Learning Representations}, 2022.
-\newblock ICLR 2022 Spotlight, metadata verified from OpenReview.
 
 \bibitem{gambiter_y}
 {Gambiter}.
@@ -27,11 +39,29 @@ I.~Danihelka, A.~Guez, J.~Schrittwieser, and D.~Silver.
 \newblock \url{https://gambiter.com/connection/Y_game.html}.
 \newblock Accessed 2026-04-08.
 
+\bibitem{gao2018threehead}
+C.~Gao, M.~M{\"u}ller, and R.~Hayward.
+\newblock Three-head neural network architecture for monte carlo tree search.
+\newblock In {\em Proceedings of the Twenty-Seventh International Joint
+  Conference on Artificial Intelligence}, pages 3762--3768, 2018.
+
+\bibitem{shannon1950chess}
+C.~E. Shannon.
+\newblock Programming a computer for playing chess.
+\newblock {\em The London, Edinburgh, and Dublin Philosophical Magazine and
+  Journal of Science}, 41(314):256--275, 1950.
+
 \bibitem{silver2017mastering}
 D.~Silver, J.~Schrittwieser, K.~Simonyan, I.~Antonoglou, A.~Huang, A.~Guez,
   T.~Hubert, L.~Baker, M.~Lai, A.~Bolton, Y.~Chen, T.~Lillicrap, F.~Hui,
   L.~Sifre, G.~van~den Driessche, T.~Graepel, and D.~Hassabis.
 \newblock Mastering the game of go without human knowledge.
 \newblock {\em Nature}, 550(7676):354--359, 2017.
+
+\bibitem{takada2020reinforcement}
+K.~Takada, H.~Iizuka, and M.~Yamamoto.
+\newblock Reinforcement learning to create value and policy functions using
+  minimax tree search in hex.
+\newblock {\em IEEE Transactions on Games}, 12(1):63--73, 2020.
 
 \end{thebibliography}

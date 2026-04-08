@@ -8,6 +8,7 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{xcolor}
+\usepackage{float}
 
 \hypersetup{
   colorlinks=true,
@@ -100,6 +101,58 @@ Shared engineering decisions are described once, and game-specific differences
 are explained only where the geometry, rules, or available heuristics actually
 diverge.
 
+\section{Literature Review and State of the Art}
+
+The study of Hex-playing algorithms dates back to the early history of
+game-playing artificial intelligence. One of the foundational discussions of
+computer approaches to board games appears in Shannon's classic paper on
+computer chess \cite{shannon1950chess}, which helped establish the broader idea
+that strategic play can be approached through search guided by approximate
+evaluation rather than exhaustive enumeration.
+
+Early approaches to game playing relied on minimax search combined with
+alpha-beta pruning, which systematically explores the game tree while removing
+branches that cannot influence the final decision. While effective in games
+such as chess, these methods are less natural for Hex because of its large
+branching factor and the difficulty of designing static evaluation functions
+that capture global connectivity well.
+
+Modern approaches to Hex have been largely shaped by Monte Carlo Tree Search.
+Cazenave and Saffidine \cite{cazenave2010montecarlohex} introduced a framework
+combining UCT with the RAVE heuristic, significantly improving the efficiency
+of search by sharing information between simulations. This paper is the direct
+methodological baseline for the classical branch of this repository.
+
+Building on these ideas, Arneson, Hayward, and Henderson developed MoHex
+\cite{arneson2010mctshex}, a strong Hex-playing program based on MCTS that
+achieved top-level performance in computer Hex competitions. Subsequent work
+further strengthened this direction by incorporating learning components. In
+particular, Gao, M\"uller, and Hayward proposed a three-head neural
+architecture for MCTS in Hex \cite{gao2018threehead}, improving both move
+selection and position evaluation by enriching the information returned by the
+network.
+
+More recent research has explored deeper integration of neural networks and
+reinforcement learning. Takada et al. introduced the DeepEzo line of work
+\cite{takada2020reinforcement}, which learns value and policy functions for Hex
+through self-play and search. Cazenave's Polygames framework
+\cite{cazenave2020polygames} then showed more broadly that zero-learning style
+systems can be transferred across several board games within one shared
+framework. In parallel, AlphaGo Zero made the policy-value paradigm central to
+modern game AI \cite{silver2017mastering}, and Gumbel AlphaZero refined the
+root-search procedure itself \cite{danihelka2022gumbel}. These developments are
+the natural background for the learned Hex branch in this repository.
+
+The Y extension occupies a slightly different position in this landscape. There
+is a substantial methodological literature on MCTS and a substantial applied
+literature on Hex, but far less standardized experimental literature on modern
+Y engines. For that reason, the Y branch in this repository should be read less
+as a reproduction of one canonical prior benchmark and more as a transfer of
+the connection-game search toolbox developed for Hex to a more general
+three-sided setting. Its rule model is grounded in standard descriptions of Y
+itself \cite{boardspace_y,gambiter_y}, while its algorithmic foundations come
+primarily from the Hex and general MCTS literature above.
+
 \section{Games and Scope}
 
 \subsection{Hex}
@@ -110,6 +163,27 @@ left and right borders. Players alternate placing stones on empty cells, and
 stones are never moved or removed. The game has no draws, which is one reason
 it is a natural domain for Monte Carlo evaluation: every complete simulation
 terminates with a unique winner.
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.56\textwidth}
+\centering
+\includegraphics[width=\linewidth]{figures/hex_board_example.pdf}
+
+\small \textbf{Hex.} Example finished position on a size-7 rhombus board.
+\end{minipage}
+\hfill
+\begin{minipage}{0.36\textwidth}
+\centering
+\includegraphics[width=\linewidth]{figures/y_board_example.pdf}
+
+\small \textbf{Y.} Example finished position on the standard triangular board.
+\end{minipage}
+\caption{Illustrative end positions for the two connection-game geometries used
+in the repository. Blue and red stones correspond to the two players, and the
+gold outline marks one winning connected component.}
+\label{fig:board-examples}
+\end{figure}
 
 From a search perspective, Hex is difficult because its value depends on global
 connectivity rather than on local material balance. A move that looks modest in
@@ -161,27 +235,6 @@ geometries used throughout the report. Both examples are rendered from finished
 self-play positions generated with the repository's own code, and the Y figure
 uses the standard triangular-board presentation described in
 \cite{boardspace_y,gambiter_y}.
-
-\begin{figure}[t]
-\centering
-\begin{minipage}{0.56\textwidth}
-\centering
-\includegraphics[width=\linewidth]{figures/hex_board_example.pdf}
-
-\small \textbf{Hex.} Example finished position on a size-7 rhombus board.
-\end{minipage}
-\hfill
-\begin{minipage}{0.36\textwidth}
-\centering
-\includegraphics[width=\linewidth]{figures/y_board_example.pdf}
-
-\small \textbf{Y.} Example finished position on the standard triangular board.
-\end{minipage}
-\caption{Illustrative end positions for the two connection-game geometries used
-in the repository. Blue and red stones correspond to the two players, and the
-gold outline marks one winning connected component.}
-\label{fig:board-examples}
-\end{figure}
 
 \section{Methods}
 
@@ -515,7 +568,15 @@ dominant early exploration signal.
 
 \paragraph{Rollout policy and RAVE bias.}
 
-\begin{table}[t]
+These results are important for interpreting the Y extension correctly. The
+branch is no longer ``working'' only in the weak sense that it runs. At the
+same non-toy board scale used for the Hex study, it shows meaningful separation
+between rollout policies and a coherent parameter picture. At the same time,
+the RAVE-bias sweep is noticeably flatter than the corresponding Hex trends,
+which reinforces the idea that Y still lacks a structural heuristic as sharp as
+Hex bridge defense.
+
+\begin{table}[H]
 \centering
 \begin{tabular}{@{}lrr@{}}
 \toprule
@@ -532,14 +593,6 @@ connectivity rollout is tested against the purely random rollout baseline, and
 the bias sweep compares candidate values against a $b=0.001$ reference.}
 \label{tab:yclasic-rollout-rave}
 \end{table}
-
-These results are important for interpreting the Y extension correctly. The
-branch is no longer ``working'' only in the weak sense that it runs. At the
-same non-toy board scale used for the Hex study, it shows meaningful separation
-between rollout policies and a coherent parameter picture. At the same time,
-the RAVE-bias sweep is noticeably flatter than the corresponding Hex trends,
-which reinforces the idea that Y still lacks a structural heuristic as sharp as
-Hex bridge defense.
 
 \section{Discussion}
 
@@ -582,6 +635,8 @@ substantial gap between random and connectivity-aware playouts. The next step
 is therefore not more implementation cleanup but better Y-specific knowledge.
 The infrastructure is in place. What remains open is which structural
 heuristics or priors will do for Y what bridges do for Hex.
+
+\clearpage
 
 \bibliographystyle{abbrv}
 \bibliography{references}
