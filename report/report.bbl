@@ -3,25 +3,28 @@
 \bibitem{boardspace_y}
 {Boardspace.net}.
 \newblock Game of y.
-\newblock \url{https://www.boardspace.net/english/about_y.html}, 2026.
+\newblock \url{https://www.boardspace.net/english/about_y.html}.
 \newblock Accessed 2026-04-08.
 
 \bibitem{cazenave2010montecarlohex}
 T.~Cazenave and A.~Saffidine.
 \newblock Monte-carlo hex.
-\newblock In {\em Computers and Games}, 2010.
+\newblock In H.~J. Herik, H.~Iida, and A.~Plaat, editors, {\em Computers and
+  Games: 7th International Conference, CG 2010, Kanazawa, Japan, September
+  24--26, 2010, Revised Selected Papers}, volume 6515 of {\em Lecture Notes in
+  Computer Science}. Springer Berlin Heidelberg, 2010.
+\newblock Proceedings metadata verified from Springer.
 
 \bibitem{danihelka2022gumbel}
-I.~Danihelka, M.~Schmid, D.~Horgan, J.~Schrittwieser, I.~Antonoglou,
-  L.~Espeholt, T.~Hubert, K.~Simonyan, L.~Sifre, T.~Schaul, M.~Lai, A.~Guez,
-  M.~Lanctot, T.~Graepel, D.~Hassabis, and D.~Silver.
+I.~Danihelka, A.~Guez, J.~Schrittwieser, and D.~Silver.
 \newblock Policy improvement by planning with gumbel.
-\newblock {\em International Conference on Learning Representations}, 2022.
+\newblock In {\em International Conference on Learning Representations}, 2022.
+\newblock ICLR 2022 Spotlight, metadata verified from OpenReview.
 
 \bibitem{gambiter_y}
 {Gambiter}.
 \newblock Y - game.
-\newblock \url{https://gambiter.com/connection/Y_game.html}, 2026.
+\newblock \url{https://gambiter.com/connection/Y_game.html}.
 \newblock Accessed 2026-04-08.
 
 \bibitem{silver2017mastering}

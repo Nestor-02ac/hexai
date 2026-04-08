@@ -2,32 +2,23 @@
 \contentsline {section}{\numberline {2}Games and Scope}{2}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Hex}{2}{subsection.2.1}%
 \contentsline {subsection}{\numberline {2.2}Y}{2}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Repository Modules}{3}{subsection.2.3}%
-\contentsline {section}{\numberline {3}Search Methods}{3}{section.3}%
+\contentsline {subsection}{\numberline {2.3}Repository Modules}{2}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Methods}{3}{section.3}%
 \contentsline {subsection}{\numberline {3.1}Classical MCTS with UCT and RAVE}{3}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}Gumbel AlphaZero}{3}{subsection.3.2}%
-\contentsline {section}{\numberline {4}Unified Implementation Strategy}{3}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Reference Path and Fast Path}{4}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Incremental Connectivity}{4}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Cython Acceleration}{4}{subsection.4.3}%
-\contentsline {section}{\numberline {5}HexClassic}{4}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Goal}{4}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Results}{4}{subsection.5.2}%
+\contentsline {subsection}{\numberline {3.2}Neural-Network-Guided MCTS}{3}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Engineering Architecture}{4}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Shared Implementation Strategy}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Module Structure}{4}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Y as an Extension of the Hex Baseline}{4}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Experimental Results}{5}{section.5}%
+\contentsline {subsection}{\numberline {5.1}HexClassic}{5}{subsection.5.1}%
 \contentsline {paragraph}{Simulation count.}{5}{section*.2}%
 \contentsline {paragraph}{UCT exploration constant.}{5}{section*.3}%
-\contentsline {paragraph}{Rollout policy and RAVE bias.}{5}{section*.4}%
-\contentsline {section}{\numberline {6}HexGumbel}{5}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Method}{5}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Results}{6}{subsection.6.2}%
-\contentsline {section}{\numberline {7}YClassic}{6}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Design Goal}{6}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Rule Model and Board Logic}{6}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Search Adaptation}{7}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Verification}{7}{subsection.7.4}%
-\contentsline {subsection}{\numberline {7.5}Performance}{7}{subsection.7.5}%
-\contentsline {subsection}{\numberline {7.6}Full-Scale Experimental Results}{7}{subsection.7.6}%
-\contentsline {paragraph}{Simulation count.}{8}{section*.5}%
-\contentsline {paragraph}{UCT exploration constant.}{8}{section*.6}%
-\contentsline {paragraph}{Rollout policy and RAVE bias.}{8}{section*.7}%
-\contentsline {section}{\numberline {8}Discussion}{8}{section.8}%
-\contentsline {section}{\numberline {9}Conclusion}{9}{section.9}%
+\contentsline {paragraph}{Rollout policy and RAVE bias.}{6}{section*.4}%
+\contentsline {subsection}{\numberline {5.2}HexGumbel}{6}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}YClassic}{6}{subsection.5.3}%
+\contentsline {paragraph}{Simulation count.}{7}{section*.5}%
+\contentsline {paragraph}{UCT exploration constant.}{7}{section*.6}%
+\contentsline {paragraph}{Rollout policy and RAVE bias.}{7}{section*.7}%
+\contentsline {section}{\numberline {6}Discussion}{7}{section.6}%
+\contentsline {section}{\numberline {7}Conclusion}{8}{section.7}%
