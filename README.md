@@ -5,8 +5,8 @@
 This repository contains a unified study of search-based agents for connection
 games of Hex and Y variation. It currently covers three modules:
 
-| Module | Game | Method | Status |
-|---|---|---|---|
+| Module | Game | Method |
+|---|---|---|
 | `HexClassic/` | Hex | UCT + RAVE + bridge rollouts |
 | `HexGumbel/` | Hex | Gumbel AlphaZero with supervised warm start |
 | `YClassic/` | Y | UCT + RAVE + connectivity rollouts |
